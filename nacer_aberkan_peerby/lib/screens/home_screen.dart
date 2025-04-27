@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart'; // We gebruiken AuthService om uit te loggen
+import '../services/auth_service.dart';
+import 'add_device_screen.dart'; // Import AddDeviceScreen
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final AuthService authService = AuthService(); // 🔥 Maak AuthService instance
+    final AuthService authService = AuthService();
 
     return Scaffold(
       appBar: AppBar(
@@ -20,10 +21,27 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: const Center(
-        child: Text(
-          'Welkom! Je bent ingelogd.',
-          style: TextStyle(fontSize: 24),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Welkom! Je bent ingelogd.',
+              style: TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddDeviceScreen(),
+                  ),
+                );
+              },
+              child: const Text('Voeg toestel toe'),
+            ),
+          ],
         ),
       ),
     );
