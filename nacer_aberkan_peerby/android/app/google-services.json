@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "1066276113601",
+    "project_id": "peerbynaceraberkan",
+    "storage_bucket": "peerbynaceraberkan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066276113601:android:40ac59918a2608844f5840",
+        "android_client_info": {
+          "package_name": "com.example.nacer_aberkan_peerby"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOU4opS-fGPjUeug9_VhC9zhL50WbeN6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066276113601:android:9dc230f8c5217f8f4f5840",
+        "android_client_info": {
+          "package_name": "com.example.peerby_flutter_nacer_aberkan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOU4opS-fGPjUeug9_VhC9zhL50WbeN6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066276113601:android:9af5eb80fdba5f684f5840",
+        "android_client_info": {
+          "package_name": "com.example.peerby_nacer_aberkan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOU4opS-fGPjUeug9_VhC9zhL50WbeN6g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
