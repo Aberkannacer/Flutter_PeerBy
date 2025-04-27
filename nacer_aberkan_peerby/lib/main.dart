@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'screens/auth_screen.dart'; // import AuthScreen
-// (later importeren we ook HomeScreen)
+import 'screens/auth_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
             );
           } else if (snapshot.hasData) {
             // Gebruiker is ingelogd
-            return const Placeholder(); // TODO: vervang straks door HomeScreen()
+            return const HomeScreen();
           } else {
             // Geen gebruiker ingelogd
             return const AuthScreen();
