@@ -34,7 +34,6 @@ ddependencies:
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -56,6 +55,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+dependencies:
+  firebase_auth: ^5.5.2
 
   # To add assets to your application, add an assets section, like this:
   # assets:
