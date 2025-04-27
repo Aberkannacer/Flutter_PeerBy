@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/device_service.dart'; // 🔥 importeren!
 
 class AddDeviceScreen extends StatefulWidget {
   const AddDeviceScreen({super.key});
@@ -12,7 +13,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
-  String _selectedCategory = 'Overige'; // Standaard categorie
+  String _selectedCategory = 'Overige';
+
+  final DeviceService _deviceService = DeviceService(); // 🔥 instance maken
 
   final List<String> _categories = [
     'Huishouden',
@@ -22,30 +25,38 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     'Overige',
   ];
 
-  void _saveDevice() {
+  Future<void> _saveDevice() async {
     if (_formKey.currentState!.validate()) {
       final name = _nameController.text.trim();
       final description = _descriptionController.text.trim();
       final price = double.tryParse(_priceController.text.trim()) ?? 0.0;
       final category = _selectedCategory;
 
-      // Voor nu: print in console
-      print('Toestel toegevoegd: $name, $description, €$price, categorie: $category');
+      try {
+        await _deviceService.addDevice(
+          name: name,
+          description: description,
+          price: price,
+          category: category,
+        );
 
-      // Later: opslaan in Firebase Firestore
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Toestel succesvol opgeslagen!')),
+        );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Toestel toegevoegd!')),
-      );
-
-      // Velden leegmaken
-      _formKey.currentState!.reset();
-      _nameController.clear();
-      _descriptionController.clear();
-      _priceController.clear();
-      setState(() {
-        _selectedCategory = 'Overige';
-      });
+        // Velden leegmaken
+        _formKey.currentState!.reset();
+        _nameController.clear();
+        _descriptionController.clear();
+        _priceController.clear();
+        setState(() {
+          _selectedCategory = 'Overige';
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fout bij opslaan: $e')),
+        );
+      }
     }
   }
 
