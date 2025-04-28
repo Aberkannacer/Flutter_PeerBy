@@ -26,7 +26,6 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Column(
         children: [
-          // 🔥 Filter dropdown
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: DropdownButton<String>(
@@ -91,47 +90,82 @@ class _MapScreenState extends State<MapScreen> {
                   );
                 }).toList();
 
-                return FlutterMap(
-                  mapController: mapController,
-                  options: MapOptions(
-                    center: LatLng(50.8503, 4.3517),
-                    zoom: 7.0,
-                    onTap: (_, __) => popupController.hideAllPopups(),
-                  ),
+                return Stack(
                   children: [
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.peerby',
-                    ),
-                    PopupMarkerLayerWidget(
-                      options: PopupMarkerLayerOptions(
-                        markers: markers,
-                        popupController: popupController,
-                        popupBuilder: (BuildContext context, Marker marker) {
-                          final doc = devices.firstWhere(
-                            (d) => d.id == (marker.key as ValueKey).value,
-                          );
-                          final data = doc.data() as Map<String, dynamic>;
-                          return Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    data['name'] ?? '',
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    FlutterMap(
+                      mapController: mapController,
+                      options: MapOptions(
+                        center: LatLng(50.8503, 4.3517),
+                        zoom: 7.0,
+                        onTap: (_, __) => popupController.hideAllPopups(),
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.example.peerby',
+                        ),
+                        PopupMarkerLayerWidget(
+                          options: PopupMarkerLayerOptions(
+                            markers: markers,
+                            popupController: popupController,
+                            popupBuilder: (BuildContext context, Marker marker) {
+                              final doc = devices.firstWhere(
+                                (d) => d.id == (marker.key as ValueKey).value,
+                              );
+                              final data = doc.data() as Map<String, dynamic>;
+                              return Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        data['name'] ?? '',
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text('Prijs: €${data['price'].toString()} per dag'),
+                                      const SizedBox(height: 4),
+                                      Text('Categorie: ${data['category'] ?? 'Onbekend'}'),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text('Prijs: €${data['price'].toString()} per dag'),
-                                  const SizedBox(height: 4),
-                                  Text('Categorie: ${data['category'] ?? 'Onbekend'}'),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      bottom: 20,
+                      right: 10,
+                      child: Column(
+                        children: [
+                          FloatingActionButton(
+                            mini: true,
+                            heroTag: "zoomIn",
+                            child: const Icon(Icons.zoom_in),
+                            onPressed: () {
+                              mapController.move(
+                                mapController.center,
+                                mapController.zoom + 1,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          FloatingActionButton(
+                            mini: true,
+                            heroTag: "zoomOut",
+                            child: const Icon(Icons.zoom_out),
+                            onPressed: () {
+                              mapController.move(
+                                mapController.center,
+                                mapController.zoom - 1,
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ],
