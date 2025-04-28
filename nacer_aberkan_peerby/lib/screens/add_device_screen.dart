@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import '../services/device_service.dart';
+import '../screens/device_list_screen.dart'; 
+
 
 class AddDeviceScreen extends StatefulWidget {
   const AddDeviceScreen({super.key});
@@ -89,6 +91,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         );
 
         if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DeviceListScreen()),
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Toestel succesvol opgeslagen!')),
         );
