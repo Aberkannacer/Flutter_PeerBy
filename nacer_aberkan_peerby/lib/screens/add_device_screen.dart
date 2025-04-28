@@ -3,8 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
 import '../services/device_service.dart';
-import '../screens/device_list_screen.dart'; 
-
+import '../screens/device_list_screen.dart';
 
 class AddDeviceScreen extends StatefulWidget {
   const AddDeviceScreen({super.key});
@@ -19,6 +18,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _addressController = TextEditingController();
+  final mapController = MapController();
 
   String _selectedCategory = 'Overige';
   final DeviceService _deviceService = DeviceService();
@@ -206,41 +206,78 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               const SizedBox(height: 8),
               SizedBox(
                 height: 300,
-                child: FlutterMap(
-                  options: MapOptions(
-                    center: LatLng(50.8503, 4.3517),
-                    zoom: 7.0,
-                    onTap: (tapPosition, point) {
-                      setState(() {
-                        _selectedLocation = point;
-                      });
-                    },
-                  ),
+                child: Stack(
                   children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.peerby',
+                    FlutterMap(
+                      mapController: mapController,
+                      options: MapOptions(
+                        center: LatLng(50.8503, 4.3517),
+                        zoom: 7.0,
+                        onTap: (tapPosition, point) {
+                          setState(() {
+                            _selectedLocation = point;
+                          });
+                        },
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.example.peerby',
+                        ),
+                        if (_selectedLocation != null)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                width: 80,
+                                height: 80,
+                                point: _selectedLocation!,
+                                builder:
+                                    (ctx) => const Icon(
+                                      Icons.location_on,
+                                      size: 40,
+                                      color: Colors.blue,
+                                    ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
-                    if (_selectedLocation != null)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            width: 80,
-                            height: 80,
-                            point: _selectedLocation!,
-                            builder:
-                                (ctx) => const Icon(
-                                  Icons.location_on,
-                                  color: Colors.blue,
-                                  size: 40,
-                                ),
+                    Positioned(
+                      bottom: 10,
+                      right: 10,
+                      child: Column(
+                        children: [
+                          FloatingActionButton(
+                            mini: true,
+                            heroTag: "zoomInAdd",
+                            child: const Icon(Icons.zoom_in),
+                            onPressed: () {
+                              mapController.move(
+                                mapController.center,
+                                mapController.zoom + 1,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          FloatingActionButton(
+                            mini: true,
+                            heroTag: "zoomOutAdd",
+                            child: const Icon(Icons.zoom_out),
+                            onPressed: () {
+                              mapController.move(
+                                mapController.center,
+                                mapController.zoom - 1,
+                              );
+                            },
                           ),
                         ],
                       ),
+                    ),
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _saveDevice,
