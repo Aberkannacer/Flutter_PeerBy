@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'add_device_screen.dart';
 import 'map_screen.dart';
 import 'device_list_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,9 +15,10 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Logout werkt nog niet')),
+                const SnackBar(content: Text('Je bent uitgelogd')),
               );
             },
           ),
@@ -44,7 +46,9 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AddDeviceScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const AddDeviceScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.add),
@@ -72,7 +76,9 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const DeviceListScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const DeviceListScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.list),
