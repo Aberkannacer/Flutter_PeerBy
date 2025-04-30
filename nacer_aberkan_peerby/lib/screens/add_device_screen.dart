@@ -19,6 +19,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final _priceController = TextEditingController();
   final _addressController = TextEditingController();
   final mapController = MapController();
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   String _selectedCategory = 'Overige';
   final DeviceService _deviceService = DeviceService();
@@ -42,20 +44,18 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         setState(() {
           _selectedLocation = LatLng(loc.latitude, loc.longitude);
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Locatie gevonden!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Locatie gevonden!')),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Geen locatie gevonden voor dit adres.'),
-          ),
+          const SnackBar(content: Text('Geen locatie gevonden voor dit adres.')),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Fout bij zoeken van adres: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Fout bij zoeken van adres: $e')),
+      );
     }
   }
 
@@ -88,6 +88,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           category: category,
           latitude: latitude,
           longitude: longitude,
+          // Beschikbaarheidsdata wordt in volgende stap toegevoegd
         );
 
         if (!mounted) return;
@@ -107,12 +108,14 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         setState(() {
           _selectedCategory = 'Overige';
           _selectedLocation = null;
+          _startDate = null;
+          _endDate = null;
         });
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Fout bij opslaan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fout bij opslaan: $e')),
+        );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,22 +139,17 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Naam van toestel',
                 ),
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Vul een naam in'
-                            : null,
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Vul een naam in' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'Beschrijving'),
                 maxLines: 3,
-                validator:
-                    (value) =>
-                        value == null || value.isEmpty
-                            ? 'Vul een beschrijving in'
-                            : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Vul een beschrijving in'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -170,23 +168,89 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                   return null;
                 },
               ),
-
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                items:
-                    _categories
-                        .map(
-                          (cat) =>
-                              DropdownMenuItem(value: cat, child: Text(cat)),
-                        )
-                        .toList(),
+                items: _categories
+                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
+                    .toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedCategory = value!;
                   });
                 },
                 decoration: const InputDecoration(labelText: 'Categorie'),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Beschikbaarheid',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _startDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _startDate != null
+                              ? 'Van: ${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                              : 'Kies begindatum',
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: _startDate ?? DateTime.now(),
+                          firstDate: _startDate ?? DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _endDate = picked;
+                          });
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _endDate != null
+                              ? 'Tot: ${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
+                              : 'Kies einddatum',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               TextFormField(
@@ -232,12 +296,11 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                                 width: 80,
                                 height: 80,
                                 point: _selectedLocation!,
-                                builder:
-                                    (ctx) => const Icon(
-                                      Icons.location_on,
-                                      size: 40,
-                                      color: Colors.blue,
-                                    ),
+                                builder: (ctx) => const Icon(
+                                  Icons.location_on,
+                                  size: 40,
+                                  color: Colors.blue,
+                                ),
                               ),
                             ],
                           ),
