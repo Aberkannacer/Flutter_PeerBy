@@ -16,26 +16,32 @@ class _MapScreenState extends State<MapScreen> {
   final PopupController popupController = PopupController();
 
   String _selectedCategory = 'Alle';
-  final List<String> _categories = ['Alle', 'Huishouden', 'Tuin', 'Keuken', 'Elektronica', 'Overige'];
+  final List<String> _categories = [
+    'Alle',
+    'Huishouden',
+    'Tuin',
+    'Keuken',
+    'Elektronica',
+    'Overige',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kaart met toestellen'),
-      ),
+      appBar: AppBar(title: const Text('Kaart met toestellen')),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: DropdownButton<String>(
               value: _selectedCategory,
-              items: _categories.map((category) {
-                return DropdownMenuItem<String>(
-                  value: category,
-                  child: Text(category),
-                );
-              }).toList(),
+              items:
+                  _categories.map((category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
               onChanged: (value) {
                 setState(() {
                   _selectedCategory = value!;
@@ -45,7 +51,8 @@ class _MapScreenState extends State<MapScreen> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('devices').snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection('devices').snapshots(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
@@ -53,42 +60,48 @@ class _MapScreenState extends State<MapScreen> {
 
                 final devices = snapshot.data!.docs;
 
-                final filteredDevices = _selectedCategory == 'Alle'
-                    ? devices
-                    : devices.where((device) {
-                        final data = device.data() as Map<String, dynamic>;
-                        return data['category'] == _selectedCategory;
-                      }).toList();
+                final filteredDevices =
+                    _selectedCategory == 'Alle'
+                        ? devices
+                        : devices.where((device) {
+                          final data = device.data() as Map<String, dynamic>;
+                          return data['category'] == _selectedCategory;
+                        }).toList();
 
-                final markers = filteredDevices.map((device) {
-                  final data = device.data() as Map<String, dynamic>;
+                final markers =
+                    filteredDevices.map((device) {
+                      final data = device.data() as Map<String, dynamic>;
 
-                  if (data['latitude'] == null || data['longitude'] == null) {
-                    return Marker(
-                      width: 0,
-                      height: 0,
-                      point: LatLng(0, 0),
-                      rotate: false,
-                      builder: (ctx) => const SizedBox.shrink(),
-                    );
-                  }
+                      if (data['latitude'] == null ||
+                          data['longitude'] == null) {
+                        return Marker(
+                          width: 0,
+                          height: 0,
+                          point: LatLng(0, 0),
+                          rotate: false,
+                          builder: (ctx) => const SizedBox.shrink(),
+                        );
+                      }
 
-                  final double latitude = (data['latitude'] as num).toDouble();
-                  final double longitude = (data['longitude'] as num).toDouble();
+                      final double latitude =
+                          (data['latitude'] as num).toDouble();
+                      final double longitude =
+                          (data['longitude'] as num).toDouble();
 
-                  return Marker(
-                    width: 80,
-                    height: 80,
-                    point: LatLng(latitude, longitude),
-                    rotate: false,
-                    builder: (ctx) => const Icon(
-                      Icons.location_on,
-                      size: 40,
-                      color: Colors.red,
-                    ),
-                    key: ValueKey(device.id),
-                  );
-                }).toList();
+                      return Marker(
+                        width: 80,
+                        height: 80,
+                        point: LatLng(latitude, longitude),
+                        rotate: false,
+                        builder:
+                            (ctx) => const Icon(
+                              Icons.location_on,
+                              size: 40,
+                              color: Colors.red,
+                            ),
+                        key: ValueKey(device.id),
+                      );
+                    }).toList();
 
                 return Stack(
                   children: [
@@ -101,33 +114,59 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate:
+                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           userAgentPackageName: 'com.example.peerby',
                         ),
                         PopupMarkerLayerWidget(
                           options: PopupMarkerLayerOptions(
                             markers: markers,
                             popupController: popupController,
-                            popupBuilder: (BuildContext context, Marker marker) {
+                            popupBuilder: (
+                              BuildContext context,
+                              Marker marker,
+                            ) {
                               final doc = devices.firstWhere(
                                 (d) => d.id == (marker.key as ValueKey).value,
                               );
                               final data = doc.data() as Map<String, dynamic>;
+
+                              final startDate =
+                                  (data['startDate'] as Timestamp?)?.toDate();
+                              final endDate =
+                                  (data['endDate'] as Timestamp?)?.toDate();
+
                               return Card(
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         data['name'] ?? '',
-                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text('Prijs: €${data['price'].toString()} per dag'),
+                                      Text(
+                                        'Prijs: €${data['price'].toString()} per dag',
+                                      ),
                                       const SizedBox(height: 4),
-                                      Text('Categorie: ${data['category'] ?? 'Onbekend'}'),
+                                      Text(
+                                        'Categorie: ${data['category'] ?? 'Onbekend'}',
+                                      ),
+                                      const SizedBox(height: 4),
+                                      if (startDate != null && endDate != null)
+                                        Text(
+                                          'Beschikbaar van ${startDate.day}/${startDate.month}/${startDate.year} '
+                                          'tot ${endDate.day}/${endDate.month}/${endDate.year}',
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ),
