@@ -12,7 +12,10 @@ class DeviceListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Beschikbare Toestellen')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: devicesCollection.orderBy('createdAt', descending: true).snapshots(),
+        stream:
+            devicesCollection
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -61,12 +64,15 @@ class DeviceListScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DeviceDetailScreen(
-                          name: name,
-                          description: description,
-                          price: price.toDouble(),
-                          category: category,
-                        ),
+                        builder:
+                            (context) => DeviceDetailScreen(
+                              name: name,
+                              description: description,
+                              price: price.toDouble(),
+                              category: category,
+                              startDate: startDate,
+                              endDate: endDate,
+                            ),
                       ),
                     );
                   },
