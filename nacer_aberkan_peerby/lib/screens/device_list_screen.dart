@@ -12,10 +12,7 @@ class DeviceListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Beschikbare Toestellen')),
       body: StreamBuilder<QuerySnapshot>(
-        stream:
-            devicesCollection
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
+        stream: devicesCollection.orderBy('createdAt', descending: true).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -37,26 +34,39 @@ class DeviceListScreen extends StatelessWidget {
               final description = device['description'];
               final price = device['price'];
               final category = device['category'];
+              final startDate = (device['startDate'] as Timestamp?)?.toDate();
+              final endDate = (device['endDate'] as Timestamp?)?.toDate();
 
               return Card(
                 margin: const EdgeInsets.all(8.0),
                 child: ListTile(
                   title: Text(name),
-                  subtitle: Text(
-                    '$description\nCategorie: $category\nPrijs: €$price per dag',
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(description),
+                      const SizedBox(height: 4),
+                      Text('Categorie: $category'),
+                      Text('Prijs: €$price per dag'),
+                      if (startDate != null && endDate != null)
+                        Text(
+                          'Beschikbaar van ${startDate.day}/${startDate.month}/${startDate.year} '
+                          'tot ${endDate.day}/${endDate.month}/${endDate.year}',
+                          style: const TextStyle(color: Colors.green),
+                        ),
+                    ],
                   ),
                   isThreeLine: true,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (context) => DeviceDetailScreen(
-                              name: name,
-                              description: description,
-                              price: price.toDouble(),
-                              category: category,
-                            ),
+                        builder: (context) => DeviceDetailScreen(
+                          name: name,
+                          description: description,
+                          price: price.toDouble(),
+                          category: category,
+                        ),
                       ),
                     );
                   },
