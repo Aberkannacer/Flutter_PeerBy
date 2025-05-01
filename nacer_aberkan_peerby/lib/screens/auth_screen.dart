@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart'; // Importeren van je AuthService
+import '../services/auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -11,7 +11,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final AuthService _authService = AuthService(); // 🔥 Maak AuthService instance
+  final AuthService _authService = AuthService();
 
   bool _isLogin = true;
 
@@ -21,13 +21,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       if (_isLogin) {
-        // Login via AuthService
         await _authService.loginWithEmailAndPassword(
           email: email,
           password: password,
         );
       } else {
-        // Registratie via AuthService
         await _authService.registerWithEmailAndPassword(
           email: email,
           password: password,

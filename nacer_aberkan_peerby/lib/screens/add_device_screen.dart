@@ -44,18 +44,20 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         setState(() {
           _selectedLocation = LatLng(loc.latitude, loc.longitude);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Locatie gevonden!')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Locatie gevonden!')));
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Geen locatie gevonden voor dit adres.')),
+          const SnackBar(
+            content: Text('Geen locatie gevonden voor dit adres.'),
+          ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Fout bij zoeken van adres: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Fout bij zoeken van adres: $e')));
     }
   }
 
@@ -81,6 +83,15 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       final longitude = _selectedLocation!.longitude;
 
       try {
+        if (_startDate == null || _endDate == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Gelieve een begin- en einddatum te kiezen.'),
+            ),
+          );
+          return;
+        }
+
         await _deviceService.addDevice(
           name: name,
           description: description,
@@ -88,7 +99,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           category: category,
           latitude: latitude,
           longitude: longitude,
-          // Beschikbaarheidsdata wordt in volgende stap toegevoegd
+          startDate: _startDate!,
+          endDate: _endDate!,
         );
 
         if (!mounted) return;
@@ -113,9 +125,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         });
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fout bij opslaan: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fout bij opslaan: $e')));
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -139,17 +151,22 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Naam van toestel',
                 ),
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Vul een naam in' : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Vul een naam in'
+                            : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(labelText: 'Beschrijving'),
                 maxLines: 3,
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Vul een beschrijving in'
-                    : null,
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Vul een beschrijving in'
+                            : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -171,9 +188,13 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 value: _selectedCategory,
-                items: _categories
-                    .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
+                items:
+                    _categories
+                        .map(
+                          (cat) =>
+                              DropdownMenuItem(value: cat, child: Text(cat)),
+                        )
+                        .toList(),
                 onChanged: (value) {
                   setState(() {
                     _selectedCategory = value!;
@@ -196,7 +217,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                           context: context,
                           initialDate: DateTime.now(),
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
                         );
                         if (picked != null) {
                           setState(() {
@@ -206,7 +229,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(8),
@@ -227,7 +252,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                           context: context,
                           initialDate: _startDate ?? DateTime.now(),
                           firstDate: _startDate ?? DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365),
+                          ),
                         );
                         if (picked != null) {
                           setState(() {
@@ -237,7 +264,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            vertical: 12, horizontal: 16),
+                          vertical: 12,
+                          horizontal: 16,
+                        ),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey),
                           borderRadius: BorderRadius.circular(8),
@@ -296,11 +325,12 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                                 width: 80,
                                 height: 80,
                                 point: _selectedLocation!,
-                                builder: (ctx) => const Icon(
-                                  Icons.location_on,
-                                  size: 40,
-                                  color: Colors.blue,
-                                ),
+                                builder:
+                                    (ctx) => const Icon(
+                                      Icons.location_on,
+                                      size: 40,
+                                      color: Colors.blue,
+                                    ),
                               ),
                             ],
                           ),
