@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'add_device_screen.dart';
 import 'map_screen.dart';
 import 'device_list_screen.dart';
+import 'my_devices_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,35 +27,39 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _loadMyRentals() async {
-    final reservations = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('renterId', isEqualTo: userId)
-        .get();
+    final reservations =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('renterId', isEqualTo: userId)
+            .get();
 
     final deviceIds = reservations.docs.map((doc) => doc['deviceId']).toList();
     if (deviceIds.isEmpty) return [];
 
-    final devices = await FirebaseFirestore.instance
-        .collection('devices')
-        .where(FieldPath.documentId, whereIn: deviceIds)
-        .get();
+    final devices =
+        await FirebaseFirestore.instance
+            .collection('devices')
+            .where(FieldPath.documentId, whereIn: deviceIds)
+            .get();
 
     return devices.docs.map((d) => d.data()).toList();
   }
 
   Future<List<Map<String, dynamic>>> _loadMyDevicesRented() async {
-    final reservations = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('ownerId', isEqualTo: userId)
-        .get();
+    final reservations =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('ownerId', isEqualTo: userId)
+            .get();
 
     final deviceIds = reservations.docs.map((doc) => doc['deviceId']).toList();
     if (deviceIds.isEmpty) return [];
 
-    final devices = await FirebaseFirestore.instance
-        .collection('devices')
-        .where(FieldPath.documentId, whereIn: deviceIds)
-        .get();
+    final devices =
+        await FirebaseFirestore.instance
+            .collection('devices')
+            .where(FieldPath.documentId, whereIn: deviceIds)
+            .get();
 
     return devices.docs.map((d) => d.data()).toList();
   }
@@ -87,31 +92,45 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('Bekijk toestellen in jouw buurt.'),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddDeviceScreen()),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddDeviceScreen()),
+                  ),
               icon: const Icon(Icons.add),
               label: const Text('Voeg toestel toe'),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MapScreen()),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MapScreen()),
+                  ),
               icon: const Icon(Icons.map),
               label: const Text('Bekijk kaart'),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DeviceListScreen()),
-              ),
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DeviceListScreen()),
+                  ),
               icon: const Icon(Icons.list),
               label: const Text('Bekijk toestellenlijst'),
             ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed:
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MyDevicesScreen()),
+                  ),
+              icon: const Icon(Icons.settings),
+              label: const Text('My Devices'),
+            ),
+
             const SizedBox(height: 32),
             const Divider(),
             const SizedBox(height: 16),
@@ -129,12 +148,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Text('Geen gehuurde toestellen.');
                 }
                 return Column(
-                  children: snapshot.data!
-                      .map((device) => ListTile(
-                            leading: const Icon(Icons.shopping_bag),
-                            title: Text(device['name'] ?? 'Onbekend'),
-                          ))
-                      .toList(),
+                  children:
+                      snapshot.data!
+                          .map(
+                            (device) => ListTile(
+                              leading: const Icon(Icons.shopping_bag),
+                              title: Text(device['name'] ?? 'Onbekend'),
+                            ),
+                          )
+                          .toList(),
                 );
               },
             ),
@@ -153,12 +175,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   return const Text('Nog geen toestellen verhuurd.');
                 }
                 return Column(
-                  children: snapshot.data!
-                      .map((device) => ListTile(
-                            leading: const Icon(Icons.engineering),
-                            title: Text(device['name'] ?? 'Onbekend'),
-                          ))
-                      .toList(),
+                  children:
+                      snapshot.data!
+                          .map(
+                            (device) => ListTile(
+                              leading: const Icon(Icons.engineering),
+                              title: Text(device['name'] ?? 'Onbekend'),
+                            ),
+                          )
+                          .toList(),
                 );
               },
             ),
