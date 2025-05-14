@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'edit_device_screen.dart'; // Zorg dat dit scherm bestaat
 
 class MyDevicesScreen extends StatefulWidget {
   const MyDevicesScreen({super.key});
@@ -13,25 +14,22 @@ class _MyDevicesScreenState extends State<MyDevicesScreen> {
   final userId = FirebaseAuth.instance.currentUser!.uid;
 
   Future<List<Map<String, dynamic>>> _fetchMyDevices() async {
-    final devices = await FirebaseFirestore.instance
-        .collection('devices')
-        .where('ownerId', isEqualTo: userId)
-        .get();
+    final devices =
+        await FirebaseFirestore.instance
+            .collection('devices')
+            .where('ownerId', isEqualTo: userId)
+            .get();
 
-    return devices.docs
-        .map((doc) => {
-              ...doc.data(),
-              'id': doc.id,
-            })
-        .toList();
+    return devices.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
   }
 
   Future<bool> _hasReservations(String deviceId) async {
-    final res = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('deviceId', isEqualTo: deviceId)
-        .limit(1)
-        .get();
+    final res =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('deviceId', isEqualTo: deviceId)
+            .limit(1)
+            .get();
     return res.docs.isNotEmpty;
   }
 
@@ -41,18 +39,23 @@ class _MyDevicesScreenState extends State<MyDevicesScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Dit toestel kan niet verwijderd worden omdat er nog reserveringen aan gekoppeld zijn.'),
+          content: Text(
+            'Dit toestel kan niet verwijderd worden omdat er nog reserveringen aan gekoppeld zijn.',
+          ),
         ),
       );
       return;
     }
 
-    await FirebaseFirestore.instance.collection('devices').doc(deviceId).delete();
+    await FirebaseFirestore.instance
+        .collection('devices')
+        .doc(deviceId)
+        .delete();
     setState(() {});
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Toestel verwijderd.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Toestel verwijderd.')));
   }
 
   @override
@@ -66,7 +69,9 @@ class _MyDevicesScreenState extends State<MyDevicesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Je hebt nog geen toestellen toegevoegd.'));
+            return const Center(
+              child: Text('Je hebt nog geen toestellen toegevoegd.'),
+            );
           }
 
           final devices = snapshot.data!;
@@ -83,16 +88,38 @@ class _MyDevicesScreenState extends State<MyDevicesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Categorie: ${device['category'] ?? ''}'),
-                      Text('Prijs: €${device['price']?.toStringAsFixed(2) ?? '-'} per dag'),
-                      if (device['startDate'] != null && device['endDate'] != null)
+                      Text(
+                        'Prijs: €${device['price']?.toStringAsFixed(2) ?? '-'} per dag',
+                      ),
+                      if (device['startDate'] != null &&
+                          device['endDate'] != null)
                         Text(
-                          'Beschikbaar van ${device['startDate'].toDate().day}/${device['startDate'].toDate().month}/${device['startDate'].toDate().year} tot ${device['endDate'].toDate().day}/${device['endDate'].toDate().month}/${device['endDate'].toDate().year}',
+                          'Beschikbaar van ${device['startDate'].toDate().day}/${device['startDate'].toDate().month}/${device['startDate'].toDate().year} '
+                          'tot ${device['endDate'].toDate().day}/${device['endDate'].toDate().month}/${device['endDate'].toDate().year}',
                         ),
                     ],
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => _deleteDevice(device['id']),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteDevice(device['id']),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (_) =>
+                                      EditDeviceScreen(deviceId: device['id']),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               );
