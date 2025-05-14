@@ -5,6 +5,14 @@ import 'device_detail_screen.dart';
 class DeviceListScreen extends StatelessWidget {
   const DeviceListScreen({super.key});
 
+  Future<bool> _isReserved(String deviceId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('reservations')
+        .where('deviceId', isEqualTo: deviceId)
+        .get();
+    return snapshot.docs.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final devicesCollection = FirebaseFirestore.instance.collection('devices');
@@ -12,10 +20,7 @@ class DeviceListScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Beschikbare Toestellen')),
       body: StreamBuilder<QuerySnapshot>(
-        stream:
-            devicesCollection
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
+        stream: devicesCollection.orderBy('createdAt', descending: true).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -51,38 +56,46 @@ class DeviceListScreen extends StatelessWidget {
                       : null;
 
               final deviceId = device.id;
+              final ownerId = data?['ownerId'] ?? 'onbekend';
 
-              final ownerId =
-                  data != null && data.containsKey('ownerId')
-                      ? data['ownerId']
-                      : 'onbekend';
+              return FutureBuilder<bool>(
+                future: _isReserved(deviceId),
+                builder: (context, reservedSnapshot) {
+                  final isReserved = reservedSnapshot.data ?? false;
 
-              return Card(
-                margin: const EdgeInsets.all(8.0),
-                child: ListTile(
-                  title: Text(name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(description),
-                      const SizedBox(height: 4),
-                      Text('Categorie: $category'),
-                      Text('Prijs: €$price per dag'),
-                      if (startDate != null && endDate != null)
-                        Text(
-                          'Beschikbaar van ${startDate.day}/${startDate.month}/${startDate.year} '
-                          'tot ${endDate.day}/${endDate.month}/${endDate.year}',
-                          style: const TextStyle(color: Colors.green),
-                        ),
-                    ],
-                  ),
-                  isThreeLine: true,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => DeviceDetailScreen(
+                  return Card(
+                    margin: const EdgeInsets.all(8.0),
+                    child: ListTile(
+                      title: Text(name),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(description),
+                          const SizedBox(height: 4),
+                          Text('Categorie: $category'),
+                          Text('Prijs: €$price per dag'),
+                          if (startDate != null && endDate != null)
+                            Text(
+                              'Beschikbaar van ${startDate.day}/${startDate.month}/${startDate.year} '
+                              'tot ${endDate.day}/${endDate.month}/${endDate.year}',
+                              style: const TextStyle(color: Colors.green),
+                            ),
+                          if (isReserved)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 4.0),
+                              child: Text(
+                                '⚠️ Reeds gereserveerd',
+                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                        ],
+                      ),
+                      isThreeLine: true,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => DeviceDetailScreen(
                               deviceId: deviceId,
                               ownerId: ownerId,
                               name: name,
@@ -92,10 +105,12 @@ class DeviceListScreen extends StatelessWidget {
                               startDate: startDate,
                               endDate: endDate,
                             ),
-                      ),
-                    );
-                  },
-                ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               );
             },
           );
