@@ -33,12 +33,29 @@ class DeviceListScreen extends StatelessWidget {
             itemCount: devices.length,
             itemBuilder: (context, index) {
               final device = devices[index];
-              final name = device['name'];
-              final description = device['description'];
-              final price = device['price'];
-              final category = device['category'];
-              final startDate = (device['startDate'] as Timestamp?)?.toDate();
-              final endDate = (device['endDate'] as Timestamp?)?.toDate();
+              final data = device.data() as Map<String, dynamic>?;
+
+              final name = data?['name'] ?? 'Onbekend';
+              final description = data?['description'] ?? '';
+              final price = data?['price'] ?? 0;
+              final category = data?['category'] ?? '';
+
+              final startDate =
+                  data != null && data.containsKey('startDate')
+                      ? (data['startDate'] as Timestamp?)?.toDate()
+                      : null;
+
+              final endDate =
+                  data != null && data.containsKey('endDate')
+                      ? (data['endDate'] as Timestamp?)?.toDate()
+                      : null;
+
+              final deviceId = device.id;
+
+              final ownerId =
+                  data != null && data.containsKey('ownerId')
+                      ? data['ownerId']
+                      : 'onbekend';
 
               return Card(
                 margin: const EdgeInsets.all(8.0),
@@ -66,6 +83,8 @@ class DeviceListScreen extends StatelessWidget {
                       MaterialPageRoute(
                         builder:
                             (context) => DeviceDetailScreen(
+                              deviceId: deviceId,
+                              ownerId: ownerId,
                               name: name,
                               description: description,
                               price: price.toDouble(),
