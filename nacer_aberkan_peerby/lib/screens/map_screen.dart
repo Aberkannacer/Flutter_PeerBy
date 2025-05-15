@@ -4,6 +4,7 @@ import 'package:flutter_map_marker_popup/flutter_map_marker_popup.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -123,9 +124,13 @@ class _MapScreenState extends State<MapScreen> {
 
                 final devices = snapshot.data!.docs;
 
+                final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+
                 final filteredDevices =
                     devices.where((device) {
                       final data = device.data() as Map<String, dynamic>;
+
+                      final isNotOwnDevice = data['ownerId'] != currentUserId;
                       final matchesCategory =
                           _selectedCategory == 'Alle' ||
                           data['category'] == _selectedCategory;
@@ -137,7 +142,7 @@ class _MapScreenState extends State<MapScreen> {
                               ? _isWithinRadius(lat, lng)
                               : false;
 
-                      return matchesCategory && matchesRadius;
+                      return isNotOwnDevice && matchesCategory && matchesRadius;
                     }).toList();
 
                 final markers =

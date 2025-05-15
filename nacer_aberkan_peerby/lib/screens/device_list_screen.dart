@@ -1,26 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'device_detail_screen.dart';
 
 class DeviceListScreen extends StatelessWidget {
   const DeviceListScreen({super.key});
 
   Future<bool> _isReserved(String deviceId) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('deviceId', isEqualTo: deviceId)
-        .get();
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('deviceId', isEqualTo: deviceId)
+            .get();
     return snapshot.docs.isNotEmpty;
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
     final devicesCollection = FirebaseFirestore.instance.collection('devices');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Beschikbare Toestellen')),
       body: StreamBuilder<QuerySnapshot>(
-        stream: devicesCollection.orderBy('createdAt', descending: true).snapshots(),
+        stream:
+            devicesCollection
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -32,7 +38,18 @@ class DeviceListScreen extends StatelessWidget {
             );
           }
 
-          final devices = snapshot.data!.docs;
+          // 🔥 Filter eigen toestellen eruit
+          final devices =
+              snapshot.data!.docs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>?;
+                return data != null && data['ownerId'] != currentUserId;
+              }).toList();
+
+          if (devices.isEmpty) {
+            return const Center(
+              child: Text('Geen externe toestellen gevonden.'),
+            );
+          }
 
           return ListView.builder(
             itemCount: devices.length,
@@ -44,17 +61,8 @@ class DeviceListScreen extends StatelessWidget {
               final description = data?['description'] ?? '';
               final price = data?['price'] ?? 0;
               final category = data?['category'] ?? '';
-
-              final startDate =
-                  data != null && data.containsKey('startDate')
-                      ? (data['startDate'] as Timestamp?)?.toDate()
-                      : null;
-
-              final endDate =
-                  data != null && data.containsKey('endDate')
-                      ? (data['endDate'] as Timestamp?)?.toDate()
-                      : null;
-
+              final startDate = (data?['startDate'] as Timestamp?)?.toDate();
+              final endDate = (data?['endDate'] as Timestamp?)?.toDate();
               final deviceId = device.id;
               final ownerId = data?['ownerId'] ?? 'onbekend';
 
@@ -85,7 +93,10 @@ class DeviceListScreen extends StatelessWidget {
                               padding: EdgeInsets.only(top: 4.0),
                               child: Text(
                                 '⚠️ Reeds gereserveerd',
-                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                         ],
@@ -95,16 +106,17 @@ class DeviceListScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DeviceDetailScreen(
-                              deviceId: deviceId,
-                              ownerId: ownerId,
-                              name: name,
-                              description: description,
-                              price: price.toDouble(),
-                              category: category,
-                              startDate: startDate,
-                              endDate: endDate,
-                            ),
+                            builder:
+                                (context) => DeviceDetailScreen(
+                                  deviceId: deviceId,
+                                  ownerId: ownerId,
+                                  name: name,
+                                  description: description,
+                                  price: price.toDouble(),
+                                  category: category,
+                                  startDate: startDate,
+                                  endDate: endDate,
+                                ),
                           ),
                         );
                       },
