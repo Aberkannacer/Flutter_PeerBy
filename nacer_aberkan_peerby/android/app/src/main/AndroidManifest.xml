@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.nacer_aberkan_peerby">
 
+    <!-- ✅ Locatie-permissies toegevoegd -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:label="nacer_aberkan_peerby"
         android:name="${applicationName}"
@@ -30,7 +34,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
     </application>
 
     <queries>
