@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
   final String deviceId;
@@ -29,157 +30,237 @@ class DeviceDetailScreen extends StatefulWidget {
 }
 
 class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
-  DateTime? _selectedStart;
-  DateTime? _selectedEnd;
+  DateTime? _rangeStart;
+  DateTime? _rangeEnd;
   bool _isSubmitting = false;
+  Set<DateTime> _reservedDates = {};
 
-  Future<void> _selectDates() async {
-    final DateTimeRange? range = await showDateRangePicker(
-      context: context,
-      firstDate: widget.startDate ?? DateTime.now(),
-      lastDate: widget.endDate ?? DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (range != null) {
-      setState(() {
-        _selectedStart = range.start;
-        _selectedEnd = range.end;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadReservedDates();
   }
 
+  void _loadReservedDates() async {
+    final reservations =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('deviceId', isEqualTo: widget.deviceId)
+            .get();
+
+    final reserved = <DateTime>{};
+    for (var doc in reservations.docs) {
+      final data = doc.data();
+      final start = (data['startDate'] as Timestamp).toDate();
+      final end = (data['endDate'] as Timestamp).toDate();
+      for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
+        reserved.add(DateTime(d.year, d.month, d.day));
+      }
+    }
+
+    setState(() {
+      _reservedDates = reserved;
+    });
+  }
+
+  bool _isDisabled(DateTime day) {
+    final normalized = DateTime(day.year, day.month, day.day);
+    final inPeriod =
+        widget.startDate != null &&
+        widget.endDate != null &&
+        !normalized.isBefore(widget.startDate!) &&
+        !normalized.isAfter(widget.endDate!);
+    return !inPeriod || _reservedDates.contains(normalized);
+  }
+
+  void _onDaySelected(DateTime selectedDay, DateTime focusedDay) {
+    if (_isDisabled(selectedDay)) return;
+
+    setState(() {
+      if (_rangeStart == null || (_rangeStart != null && _rangeEnd != null)) {
+        _rangeStart = selectedDay;
+        _rangeEnd = null;
+      } else if (_rangeStart != null && _rangeEnd == null) {
+        if (selectedDay.isBefore(_rangeStart!)) {
+          _rangeEnd = _rangeStart;
+          _rangeStart = selectedDay;
+        } else {
+          _rangeEnd = selectedDay;
+        }
+      }
+    });
+  }
 
   Future<void> _reserveDevice() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-    if (currentUser.uid == widget.ownerId) {
+    if (user.uid == widget.ownerId) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Je kan je eigen toestel niet reserveren.')),
+        const SnackBar(
+          content: Text('Je kan je eigen toestel niet reserveren.'),
+        ),
       );
       return;
     }
 
-    if (_selectedStart == null || _selectedEnd == null) {
+    if (_rangeStart == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Kies een periode.')));
+      return;
+    }
+
+    final start = _rangeStart!;
+    final end = _rangeEnd ?? _rangeStart!;
+
+    if (start.isBefore(widget.startDate!) || end.isAfter(widget.endDate!)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kies een periode om te reserveren.')),
+        const SnackBar(content: Text('Periode buiten beschikbaarheid.')),
       );
       return;
     }
 
-    if (widget.startDate != null && _selectedStart!.isBefore(widget.startDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Startdatum valt buiten de beschikbaarheid.')),
-      );
-      return;
-    }
-    if (widget.endDate != null && _selectedEnd!.isAfter(widget.endDate!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Einddatum valt buiten de beschikbaarheid.')),
-      );
-      return;
+    for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
+      if (_reservedDates.contains(DateTime(d.year, d.month, d.day))) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Geselecteerde periode bevat reeds gereserveerde dagen.',
+            ),
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isSubmitting = true);
 
-    final reservations = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('deviceId', isEqualTo: widget.deviceId)
-        .get();
-
-    for (var doc in reservations.docs) {
-      final data = doc.data();
-      final Timestamp? startTimestamp = data['startDate'];
-      final Timestamp? endTimestamp = data['endDate'];
-      final String renterId = data['renterId'];
-
-      if (startTimestamp == null || endTimestamp == null) continue;
-
-      final existingStart = startTimestamp.toDate();
-      final existingEnd = endTimestamp.toDate();
-
-      if (renterId == currentUser.uid &&
-          _selectedStart!.isBefore(existingEnd) &&
-          _selectedEnd!.isAfter(existingStart)) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Je hebt dit toestel al in die periode gereserveerd.')),
-        );
-        return;
-      }
-
-      if (_selectedStart!.isBefore(existingEnd) &&
-          _selectedEnd!.isAfter(existingStart)) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Deze periode is al (deels) gereserveerd.')),
-        );
-        return;
-      }
-    }
-
     await FirebaseFirestore.instance.collection('reservations').add({
       'deviceId': widget.deviceId,
       'ownerId': widget.ownerId,
-      'renterId': currentUser.uid,
-      'startDate': _selectedStart,
-      'endDate': _selectedEnd,
+      'renterId': user.uid,
+      'startDate': start,
+      'endDate': end,
       'createdAt': Timestamp.now(),
     });
 
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reservering succesvol!')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Reservering succesvol!')));
 
-    setState(() => _isSubmitting = false);
+    setState(() {
+      _isSubmitting = false;
+      _rangeStart = null;
+      _rangeEnd = null;
+      _loadReservedDates();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.name)),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            Text(widget.description, style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 16),
-            Text('Categorie: ${widget.category}', style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 16),
-            Text('Prijs: €${widget.price.toStringAsFixed(2)} per dag', style: const TextStyle(fontSize: 16)),
-            if (widget.startDate != null && widget.endDate != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(
-                  'Beschikbaar van ${widget.startDate!.day}/${widget.startDate!.month}/${widget.startDate!.year} '
-                  'tot ${widget.endDate!.day}/${widget.endDate!.month}/${widget.endDate!.year}',
-                  style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                ),
-              ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _selectDates,
-              child: const Text('Kies periode'),
+            Text(
+              widget.name,
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
-            if (_selectedStart != null && _selectedEnd != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Gekozen: ${_selectedStart!.day}/${_selectedStart!.month}/${_selectedStart!.year} - '
-                  '${_selectedEnd!.day}/${_selectedEnd!.month}/${_selectedEnd!.year}',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+            const SizedBox(height: 8),
+            Text(widget.description),
+            const SizedBox(height: 8),
+            Text('Categorie: ${widget.category}'),
+            Text('Prijs: €${widget.price.toStringAsFixed(2)} per dag'),
+            const SizedBox(height: 12),
+            if (widget.startDate != null && widget.endDate != null)
+              Text(
+                'Beschikbaar van ${widget.startDate!.day}/${widget.startDate!.month} tot '
+                '${widget.endDate!.day}/${widget.endDate!.month}',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            const Spacer(),
+            const SizedBox(height: 20),
+            TableCalendar(
+              firstDay: DateTime(2020),
+              lastDay: DateTime(2030),
+              focusedDay: _rangeStart ?? widget.startDate ?? DateTime.now(),
+              calendarFormat: CalendarFormat.month,
+              availableCalendarFormats: const {CalendarFormat.month: 'Maand'},
+              rangeSelectionMode: RangeSelectionMode.toggledOn,
+              selectedDayPredicate:
+                  (day) =>
+                      _rangeStart != null &&
+                      (_rangeEnd ?? _rangeStart!).compareTo(day) >= 0 &&
+                      day.compareTo(_rangeStart!) >= 0,
+              rangeStartDay: _rangeStart,
+              rangeEndDay: _rangeEnd,
+              onDaySelected: _onDaySelected,
+              enabledDayPredicate: (day) => !_isDisabled(day),
+              calendarStyle: CalendarStyle(
+                isTodayHighlighted: true,
+                rangeHighlightColor: Colors.green.withOpacity(0.4),
+                rangeStartDecoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                rangeEndDecoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                disabledTextStyle: const TextStyle(
+                  color: Colors.grey,
+                  decoration: TextDecoration.lineThrough, // 🔥 Doorgestreept
+                ),
+                defaultTextStyle: const TextStyle(color: Colors.black),
+              ),
+              calendarBuilders: CalendarBuilders(
+                defaultBuilder: (context, day, focusedDay) {
+                  final normalized = DateTime(day.year, day.month, day.day);
+
+                  // Groene bolletjes voor beschikbare dagen
+                  if (!_isDisabled(day)) {
+                    return Container(
+                      margin: const EdgeInsets.all(6.0),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${day.day}',
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }
+
+                  return null;
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            if (_rangeStart != null)
+              Text(
+                'Gekozen: ${_rangeStart!.day}/${_rangeStart!.month} '
+                '${_rangeEnd != null ? ' - ${_rangeEnd!.day}/${_rangeEnd!.month}' : ''}',
+              ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isSubmitting ? null : _reserveDevice,
-              child: _isSubmitting
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Reserveer'),
+              child:
+                  _isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Reserveer'),
             ),
           ],
         ),

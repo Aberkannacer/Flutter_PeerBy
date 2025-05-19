@@ -17,6 +17,9 @@ dependencies:
   flutter_map_marker_popup: ^4.0.0
   geocoding: ^2.0.5
   geolocator: ^10.1.0
+  syncfusion_flutter_datepicker: ^23.1.36
+  table_calendar: ^3.0.9
+
 
 dev_dependencies:
   flutter_test:

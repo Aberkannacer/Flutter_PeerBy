@@ -63,12 +63,28 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
     return distance <= _radiusInKm * 1000;
   }
 
-  Future<bool> _isReserved(String deviceId) async {
-    final snapshot = await FirebaseFirestore.instance
+  Future<List<DateTime>> _getAvailableDates(String deviceId, DateTime start, DateTime end) async {
+    final reservations = await FirebaseFirestore.instance
         .collection('reservations')
         .where('deviceId', isEqualTo: deviceId)
         .get();
-    return snapshot.docs.isNotEmpty;
+
+    final reservedRanges = reservations.docs.map((doc) {
+      final data = doc.data();
+      final startDate = (data['startDate'] as Timestamp).toDate();
+      final endDate = (data['endDate'] as Timestamp).toDate();
+      return [startDate, endDate];
+    }).toList();
+
+    List<DateTime> availableDays = [];
+    DateTime current = start;
+    while (!current.isAfter(end)) {
+      final isReserved = reservedRanges.any((range) => current.isAfter(range[0].subtract(const Duration(days: 1))) && current.isBefore(range[1].add(const Duration(days: 1))));
+      if (!isReserved) availableDays.add(current);
+      current = current.add(const Duration(days: 1));
+    }
+
+    return availableDays;
   }
 
   @override
@@ -160,10 +176,10 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                     final deviceId = device.id;
                     final ownerId = data?['ownerId'] ?? 'onbekend';
 
-                    return FutureBuilder<bool>(
-                      future: _isReserved(deviceId),
-                      builder: (context, reservedSnapshot) {
-                        final isReserved = reservedSnapshot.data ?? false;
+                    return FutureBuilder<List<DateTime>>(
+                      future: _getAvailableDates(deviceId, startDate!, endDate!),
+                      builder: (context, snapshot) {
+                        final availableDates = snapshot.data;
 
                         return Card(
                           margin: const EdgeInsets.all(8.0),
@@ -178,18 +194,14 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                 Text('Prijs: €$price per dag'),
                                 if (startDate != null && endDate != null)
                                   Text(
-                                    'Beschikbaar van ${startDate.day}/${startDate.month}/${startDate.year} '
-                                    'tot ${endDate.day}/${endDate.month}/${endDate.year}',
+                                    'Beschikbaar van ${startDate.day}/${startDate.month}/${startDate.year} tot ${endDate.day}/${endDate.month}/${endDate.year}',
                                     style: const TextStyle(color: Colors.green),
                                   ),
-                                if (isReserved)
-                                  const Padding(
-                                    padding: EdgeInsets.only(top: 4.0),
-                                    child: Text(
-                                      '⚠️ Reeds gereserveerd',
-                                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                if (availableDates != null && availableDates.isNotEmpty)
+                                  Text(
+                                    'Vrij: ${availableDates.map((d) => '${d.day}/${d.month}').join(', ')}',
+                                    style: const TextStyle(color: Colors.blueGrey),
+                                  )
                               ],
                             ),
                             isThreeLine: true,
