@@ -14,6 +14,7 @@ class DeviceService {
     required double longitude,
     required DateTime startDate,
     required DateTime endDate,
+    String? renterName,
   }) async {
     await FirebaseFirestore.instance.collection('devices').add({
       'name': name,
@@ -24,6 +25,7 @@ class DeviceService {
       'longitude': longitude,
       'startDate': startDate,
       'endDate': endDate,
+      'renterName': renterName,
       'createdAt': Timestamp.now(),
       'ownerId': FirebaseAuth.instance.currentUser!.uid,
     });

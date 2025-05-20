@@ -172,6 +172,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       'deviceId': widget.deviceId,
       'ownerId': widget.ownerId,
       'renterId': user.uid,
+      'renterName': user.displayName ?? 'Onbekend',
       'startDate': start,
       'endDate': end,
       'createdAt': Timestamp.now(),
@@ -234,37 +235,37 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 ),
               ),
             TableCalendar(
-  firstDay: DateTime(2020),
-  lastDay: DateTime(2030),
-  focusedDay: _rangeStart ?? widget.startDate ?? DateTime.now(),
-  availableCalendarFormats: const {CalendarFormat.month: 'Maand'},
-  calendarFormat: CalendarFormat.month,
-  rangeSelectionMode: RangeSelectionMode.enforced,
-  rangeStartDay: _rangeStart,
-  rangeEndDay: _rangeEnd,
-  onDaySelected: _onDaySelected,
-  enabledDayPredicate: (day) => !_isDisabled(day),
-  calendarStyle: CalendarStyle(
-    isTodayHighlighted: true,
-    rangeHighlightColor: Colors.green.withOpacity(0.4),
-    rangeStartDecoration: const BoxDecoration(
-      color: Colors.green,
-      shape: BoxShape.circle,
-    ),
-    rangeEndDecoration: const BoxDecoration(
-      color: Colors.green,
-      shape: BoxShape.circle,
-    ),
-    todayDecoration: BoxDecoration(
-      color: Colors.grey.shade300,
-      shape: BoxShape.circle,
-    ),
-    disabledTextStyle: const TextStyle(
-      color: Colors.grey,
-      decoration: TextDecoration.lineThrough,
-    ),
-  ),
-),
+              firstDay: DateTime(2020),
+              lastDay: DateTime(2030),
+              focusedDay: _rangeStart ?? widget.startDate ?? DateTime.now(),
+              availableCalendarFormats: const {CalendarFormat.month: 'Maand'},
+              calendarFormat: CalendarFormat.month,
+              rangeSelectionMode: RangeSelectionMode.enforced,
+              rangeStartDay: _rangeStart,
+              rangeEndDay: _rangeEnd,
+              onDaySelected: _onDaySelected,
+              enabledDayPredicate: (day) => !_isDisabled(day),
+              calendarStyle: CalendarStyle(
+                isTodayHighlighted: true,
+                rangeHighlightColor: Colors.green.withOpacity(0.4),
+                rangeStartDecoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                rangeEndDecoration: const BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  shape: BoxShape.circle,
+                ),
+                disabledTextStyle: const TextStyle(
+                  color: Colors.grey,
+                  decoration: TextDecoration.lineThrough,
+                ),
+              ),
+            ),
 
             const SizedBox(height: 20),
             if (_rangeStart != null)

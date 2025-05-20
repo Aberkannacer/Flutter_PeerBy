@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geocoding/geocoding.dart';
-import '../services/device_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/device_list_screen.dart';
 
 class AddDeviceScreen extends StatefulWidget {
@@ -18,12 +19,12 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _addressController = TextEditingController();
+  final _renterNameController = TextEditingController();
   final mapController = MapController();
   DateTime? _startDate;
   DateTime? _endDate;
 
   String _selectedCategory = 'Overige';
-  final DeviceService _deviceService = DeviceService();
   LatLng? _selectedLocation;
 
   final List<String> _categories = [
@@ -67,6 +68,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       final description = _descriptionController.text.trim();
       final priceText = _priceController.text.trim();
       final category = _selectedCategory;
+      final renterName = _renterNameController.text.trim();
 
       final double? price = double.tryParse(priceText);
 
@@ -92,16 +94,23 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           return;
         }
 
-        await _deviceService.addDevice(
-          name: name,
-          description: description,
-          price: price,
-          category: category,
-          latitude: latitude,
-          longitude: longitude,
-          startDate: _startDate!,
-          endDate: _endDate!,
-        );
+        final renterName = _renterNameController.text.trim();
+
+        await FirebaseAuth.instance.currentUser!.updateDisplayName(renterName);
+
+        await FirebaseFirestore.instance.collection('devices').add({
+          'name': name,
+          'description': description,
+          'price': price,
+          'category': category,
+          'latitude': latitude,
+          'longitude': longitude,
+          'startDate': _startDate,
+          'endDate': _endDate,
+          'renterName': renterName,
+          'ownerId': FirebaseAuth.instance.currentUser!.uid,
+          'createdAt': Timestamp.now(),
+        });
 
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -117,6 +126,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         _descriptionController.clear();
         _priceController.clear();
         _addressController.clear();
+        _renterNameController.clear();
         setState(() {
           _selectedCategory = 'Overige';
           _selectedLocation = null;
@@ -146,6 +156,18 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              TextFormField(
+                controller: _renterNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Jouw naam (verhuurder)',
+                ),
+                validator:
+                    (value) =>
+                        value == null || value.isEmpty
+                            ? 'Vul je naam in'
+                            : null,
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(
@@ -370,7 +392,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _saveDevice,
