@@ -34,11 +34,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   DateTime? _rangeEnd;
   bool _isSubmitting = false;
   Set<DateTime> _reservedDates = {};
+  DateTime? _userReservationStart;
+  DateTime? _userReservationEnd;
 
   @override
   void initState() {
     super.initState();
     _loadReservedDates();
+    _loadUserReservation();
   }
 
   void _loadReservedDates() async {
@@ -61,6 +64,26 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     setState(() {
       _reservedDates = reserved;
     });
+  }
+
+  void _loadUserReservation() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    final snapshot =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('deviceId', isEqualTo: widget.deviceId)
+            .where('renterId', isEqualTo: userId)
+            .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      final data = snapshot.docs.first.data();
+      setState(() {
+        _userReservationStart = (data['startDate'] as Timestamp).toDate();
+        _userReservationEnd = (data['endDate'] as Timestamp).toDate();
+      });
+    }
   }
 
   bool _isDisabled(DateTime day) {
@@ -99,6 +122,15 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Je kan je eigen toestel niet reserveren.'),
+        ),
+      );
+      return;
+    }
+
+    if (_userReservationStart != null && _userReservationEnd != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Je hebt dit toestel reeds gereserveerd.'),
         ),
       );
       return;
@@ -155,6 +187,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       _rangeStart = null;
       _rangeEnd = null;
       _loadReservedDates();
+      _loadUserReservation();
     });
   }
 
@@ -187,66 +220,51 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 ),
               ),
             const SizedBox(height: 20),
+            if (_userReservationStart != null && _userReservationEnd != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  '⚠️ Je hebt dit toestel reeds gereserveerd van '
+                  '${_userReservationStart!.day}/${_userReservationStart!.month} '
+                  'tot ${_userReservationEnd!.day}/${_userReservationEnd!.month}',
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             TableCalendar(
-              firstDay: DateTime(2020),
-              lastDay: DateTime(2030),
-              focusedDay: _rangeStart ?? widget.startDate ?? DateTime.now(),
-              calendarFormat: CalendarFormat.month,
-              availableCalendarFormats: const {CalendarFormat.month: 'Maand'},
-              rangeSelectionMode: RangeSelectionMode.toggledOn,
-              selectedDayPredicate:
-                  (day) =>
-                      _rangeStart != null &&
-                      (_rangeEnd ?? _rangeStart!).compareTo(day) >= 0 &&
-                      day.compareTo(_rangeStart!) >= 0,
-              rangeStartDay: _rangeStart,
-              rangeEndDay: _rangeEnd,
-              onDaySelected: _onDaySelected,
-              enabledDayPredicate: (day) => !_isDisabled(day),
-              calendarStyle: CalendarStyle(
-                isTodayHighlighted: true,
-                rangeHighlightColor: Colors.green.withOpacity(0.4),
-                rangeStartDecoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-                rangeEndDecoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                ),
-                disabledTextStyle: const TextStyle(
-                  color: Colors.grey,
-                  decoration: TextDecoration.lineThrough, // 🔥 Doorgestreept
-                ),
-                defaultTextStyle: const TextStyle(color: Colors.black),
-              ),
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, day, focusedDay) {
-                  final normalized = DateTime(day.year, day.month, day.day);
-
-                  // Groene bolletjes voor beschikbare dagen
-                  if (!_isDisabled(day)) {
-                    return Container(
-                      margin: const EdgeInsets.all(6.0),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '${day.day}',
-                        style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return null;
-                },
-              ),
-            ),
+  firstDay: DateTime(2020),
+  lastDay: DateTime(2030),
+  focusedDay: _rangeStart ?? widget.startDate ?? DateTime.now(),
+  availableCalendarFormats: const {CalendarFormat.month: 'Maand'},
+  calendarFormat: CalendarFormat.month,
+  rangeSelectionMode: RangeSelectionMode.enforced,
+  rangeStartDay: _rangeStart,
+  rangeEndDay: _rangeEnd,
+  onDaySelected: _onDaySelected,
+  enabledDayPredicate: (day) => !_isDisabled(day),
+  calendarStyle: CalendarStyle(
+    isTodayHighlighted: true,
+    rangeHighlightColor: Colors.green.withOpacity(0.4),
+    rangeStartDecoration: const BoxDecoration(
+      color: Colors.green,
+      shape: BoxShape.circle,
+    ),
+    rangeEndDecoration: const BoxDecoration(
+      color: Colors.green,
+      shape: BoxShape.circle,
+    ),
+    todayDecoration: BoxDecoration(
+      color: Colors.grey.shade300,
+      shape: BoxShape.circle,
+    ),
+    disabledTextStyle: const TextStyle(
+      color: Colors.grey,
+      decoration: TextDecoration.lineThrough,
+    ),
+  ),
+),
 
             const SizedBox(height: 20),
             if (_rangeStart != null)
