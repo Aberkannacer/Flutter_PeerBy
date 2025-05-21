@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:nacer_aberkan_peerby/screens/RentalDetailScreen.dart';
+import 'package:nacer_aberkan_peerby/screens/RentalSummaryScreen.dart';
 import 'add_device_screen.dart';
 import 'map_screen.dart';
 import 'device_list_screen.dart';
@@ -42,7 +44,11 @@ class _HomeScreenState extends State<HomeScreen> {
             .where(FieldPath.documentId, whereIn: deviceIds)
             .get();
 
-    return devices.docs.map((d) => d.data()).toList();
+    return devices.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return data;
+    }).toList();
   }
 
   Future<List<Map<String, dynamic>>> _loadMyDevicesRented() async {
@@ -61,7 +67,11 @@ class _HomeScreenState extends State<HomeScreen> {
             .where(FieldPath.documentId, whereIn: deviceIds)
             .get();
 
-    return devices.docs.map((d) => d.data()).toList();
+    return devices.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return data;
+    }).toList();
   }
 
   @override
@@ -152,6 +162,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       snapshot.data!
                           .map(
                             (device) => ListTile(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => RentalDetailScreen(
+                                          deviceId: device['id'],
+                                        ),
+                                  ),
+                                );
+                              },
+
                               leading: const Icon(Icons.shopping_bag),
                               title: Text(device['name'] ?? 'Onbekend'),
                             ),
@@ -179,6 +201,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       snapshot.data!
                           .map(
                             (device) => ListTile(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => RentalSummaryScreen(
+                                          deviceId: device['id'],
+                                          deviceData: device,
+                                        ),
+                                  ),
+                                );
+                              },
+
                               leading: const Icon(Icons.engineering),
                               title: Text(device['name'] ?? 'Onbekend'),
                             ),
