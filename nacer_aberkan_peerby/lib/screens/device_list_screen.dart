@@ -292,11 +292,23 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                         category: category,
                                         startDate: startDate,
                                         endDate: endDate,
-                                        photoUrl: data?['photoUrl']
+                                        photoUrl: data?['photoUrl'],
                                       ),
                                 ),
                               );
                             },
+                            trailing:
+                                (data?['photoUrl'] != null)
+                                    ? Image.network(
+                                      data?['photoUrl'],
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : const Icon(
+                                      Icons.image_not_supported,
+                                      size: 50,
+                                    ),
                           ),
                         );
                       },

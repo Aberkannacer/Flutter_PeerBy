@@ -60,23 +60,50 @@ class _RentalSummaryScreenState extends State<RentalSummaryScreen> {
               style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            Text(
+              'Beschrijving:',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             Text(device['description'] ?? 'Geen beschrijving'),
             const SizedBox(height: 16),
-            Text('Categorie: ${device['category'] ?? '-'}'),
+            Text(
+              'Categorie:',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text('${device['category'] ?? '-'}'),
+            const SizedBox(height: 16),
+            Text(
+              'Prijs:',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             Text('Prijs: €${(device['price'] ?? 0).toString()} per dag'),
             const SizedBox(height: 16),
+            Text(
+              'Verhuurperiode:',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             if (startDate != null && endDate != null)
               Text(
                 'Verhuurd van ${startDate!.day}/${startDate!.month} '
                 'tot ${endDate!.day}/${endDate!.month}',
               ),
+              const SizedBox(height: 20),
             if (renterName != null)
               Text(
                 'Verhuurd aan: $renterName',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             const SizedBox(height: 20),
-            const Text('📷 Foto van het toestel komt hier later...'),
+            if (device['photoUrl'] != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Image.network(
+                  device['photoUrl'],
+                  width: double.infinity,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+              ),
           ],
         ),
       ),

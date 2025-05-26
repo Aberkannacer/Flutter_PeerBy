@@ -7,12 +7,17 @@ class RentalDetailScreen extends StatelessWidget {
   const RentalDetailScreen({super.key, required this.deviceId});
 
   Future<Map<String, dynamic>?> _fetchRentalDetails() async {
-    final deviceDoc = await FirebaseFirestore.instance.collection('devices').doc(deviceId).get();
-    final reservationQuery = await FirebaseFirestore.instance
-        .collection('reservations')
-        .where('deviceId', isEqualTo: deviceId)
-        .limit(1)
-        .get();
+    final deviceDoc =
+        await FirebaseFirestore.instance
+            .collection('devices')
+            .doc(deviceId)
+            .get();
+    final reservationQuery =
+        await FirebaseFirestore.instance
+            .collection('reservations')
+            .where('deviceId', isEqualTo: deviceId)
+            .limit(1)
+            .get();
 
     if (!deviceDoc.exists || reservationQuery.docs.isEmpty) return null;
 
@@ -23,6 +28,7 @@ class RentalDetailScreen extends StatelessWidget {
       'name': deviceData['name'],
       'description': deviceData['description'],
       'category': deviceData['category'],
+      'photoUrl': deviceData['photoUrl'],
       'startDate': (reservation['startDate'] as Timestamp).toDate(),
       'endDate': (reservation['endDate'] as Timestamp).toDate(),
     };
@@ -53,16 +59,50 @@ class RentalDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   data['name'] ?? 'Onbekend',
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                Text('Categorie: ${data['category']}'),
+                Text(
+                  'Categorie:',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text('${data['category']}'),
                 const SizedBox(height: 8),
-                Text('Gehuurd van ${start.day}/${start.month}/${start.year} tot ${end.day}/${end.month}/${end.year}'),
+                Text(
+                  'Huurperiode:',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Gehuurd van ${start.day}/${start.month}/${start.year} tot ${end.day}/${end.month}/${end.year}',
+                ),
                 const SizedBox(height: 16),
+                Text(
+                  'Beschrijving:',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 Text(data['description'] ?? ''),
-                const SizedBox(height: 16),
-                const Text('Afbeelding komt later hier.', style: TextStyle(color: Colors.grey)),
+                if (data['photoUrl'] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Image.network(
+                      data['photoUrl'],
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
               ],
             ),
           );
