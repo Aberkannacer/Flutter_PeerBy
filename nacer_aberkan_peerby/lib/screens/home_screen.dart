@@ -74,6 +74,79 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        title,
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  Widget _buildDeviceList(
+    Future<List<Map<String, dynamic>>> future,
+    bool isRental,
+  ) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CircularProgressIndicator();
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text(
+            isRental
+                ? 'Geen gehuurde toestellen.'
+                : 'Nog geen toestellen verhuurd.',
+          );
+        }
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: snapshot.data!.length,
+          itemBuilder: (context, index) {
+            final device = snapshot.data![index];
+            return Card(
+              elevation: 2,
+              child: ListTile(
+                leading:
+                    device['photoUrl'] != null
+                        ? Image.network(
+                          device['photoUrl'],
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                        : const Icon(Icons.devices),
+                title: Text(device['name'] ?? 'Onbekend'),
+                subtitle: Text(device['category'] ?? ''),
+                trailing: Icon(
+                  isRental ? Icons.shopping_bag : Icons.engineering,
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (_) =>
+                              isRental
+                                  ? RentalDetailScreen(deviceId: device['id'])
+                                  : RentalSummaryScreen(
+                                    deviceId: device['id'],
+                                    deviceData: device,
+                                  ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,139 +162,75 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const Text(
-              'Huur en deel eenvoudig!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+              'Welkom bij PeerBy!',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text('Bekijk toestellen in jouw buurt.'),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddDeviceScreen()),
-                  ),
-              icon: const Icon(Icons.add),
-              label: const Text('Voeg toestel toe'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MapScreen()),
-                  ),
-              icon: const Icon(Icons.map),
-              label: const Text('Bekijk kaart'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const DeviceListScreen()),
-                  ),
-              icon: const Icon(Icons.list),
-              label: const Text('Bekijk toestellenlijst'),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const MyDevicesScreen()),
-                  ),
-              icon: const Icon(Icons.settings),
-              label: const Text('My Devices'),
-            ),
-
-            const SizedBox(height: 32),
-            const Divider(),
-            const SizedBox(height: 16),
             const Text(
-              'Mijn gehuurde toestellen',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: _myRentals,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('Geen gehuurde toestellen.');
-                }
-                return Column(
-                  children:
-                      snapshot.data!
-                          .map(
-                            (device) => ListTile(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => RentalDetailScreen(
-                                          deviceId: device['id'],
-                                        ),
-                                  ),
-                                );
-                              },
-
-                              leading: const Icon(Icons.shopping_bag),
-                              title: Text(device['name'] ?? 'Onbekend'),
-                            ),
-                          )
-                          .toList(),
-                );
-              },
+              'Huur en deel eenvoudig met anderen.',
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Mijn verhuurde toestellen',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddDeviceScreen(),
+                        ),
+                      ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Voeg toestel toe'),
+                ),
+                ElevatedButton.icon(
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const MapScreen()),
+                      ),
+                  icon: const Icon(Icons.map),
+                  label: const Text('Bekijk kaart'),
+                ),
+                ElevatedButton.icon(
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DeviceListScreen(),
+                        ),
+                      ),
+                  icon: const Icon(Icons.list),
+                  label: const Text('Toestellenlijst'),
+                ),
+                ElevatedButton.icon(
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MyDevicesScreen(),
+                        ),
+                      ),
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Mijn toestellen'),
+                ),
+              ],
             ),
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: _myDevicesRented,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('Nog geen toestellen verhuurd.');
-                }
-                return Column(
-                  children:
-                      snapshot.data!
-                          .map(
-                            (device) => ListTile(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (_) => RentalSummaryScreen(
-                                          deviceId: device['id'],
-                                          deviceData: device,
-                                        ),
-                                  ),
-                                );
-                              },
-
-                              leading: const Icon(Icons.engineering),
-                              title: Text(device['name'] ?? 'Onbekend'),
-                            ),
-                          )
-                          .toList(),
-                );
-              },
-            ),
+            const Divider(height: 40, thickness: 1),
+            _buildSectionTitle('Mijn gehuurde toestellen'),
+            _buildDeviceList(_myRentals, true),
+            const SizedBox(height: 24),
+            _buildSectionTitle('Mijn verhuurde toestellen'),
+            _buildDeviceList(_myDevicesRented, false),
           ],
         ),
       ),
