@@ -12,6 +12,7 @@ class DeviceDetailScreen extends StatefulWidget {
   final String category;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String? photoUrl;
 
   const DeviceDetailScreen({
     super.key,
@@ -23,6 +24,7 @@ class DeviceDetailScreen extends StatefulWidget {
     required this.category,
     this.startDate,
     this.endDate,
+    this.photoUrl,
   });
 
   @override
@@ -45,11 +47,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   void _loadReservedDates() async {
-    final reservations =
-        await FirebaseFirestore.instance
-            .collection('reservations')
-            .where('deviceId', isEqualTo: widget.deviceId)
-            .get();
+    final reservations = await FirebaseFirestore.instance
+        .collection('reservations')
+        .where('deviceId', isEqualTo: widget.deviceId)
+        .get();
 
     final reserved = <DateTime>{};
     for (var doc in reservations.docs) {
@@ -70,12 +71,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
-    final snapshot =
-        await FirebaseFirestore.instance
-            .collection('reservations')
-            .where('deviceId', isEqualTo: widget.deviceId)
-            .where('renterId', isEqualTo: userId)
-            .get();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('reservations')
+        .where('deviceId', isEqualTo: widget.deviceId)
+        .where('renterId', isEqualTo: userId)
+        .get();
 
     if (snapshot.docs.isNotEmpty) {
       final data = snapshot.docs.first.data();
@@ -88,8 +88,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
   bool _isDisabled(DateTime day) {
     final normalized = DateTime(day.year, day.month, day.day);
-    final inPeriod =
-        widget.startDate != null &&
+    final inPeriod = widget.startDate != null &&
         widget.endDate != null &&
         !normalized.isBefore(widget.startDate!) &&
         !normalized.isAfter(widget.endDate!);
@@ -120,26 +119,22 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
     if (user.uid == widget.ownerId) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Je kan je eigen toestel niet reserveren.'),
-        ),
+        const SnackBar(content: Text('Je kan je eigen toestel niet reserveren.')),
       );
       return;
     }
 
     if (_userReservationStart != null && _userReservationEnd != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Je hebt dit toestel reeds gereserveerd.'),
-        ),
+        const SnackBar(content: Text('Je hebt dit toestel reeds gereserveerd.')),
       );
       return;
     }
 
     if (_rangeStart == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Kies een periode.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kies een periode.')),
+      );
       return;
     }
 
@@ -156,11 +151,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
       if (_reservedDates.contains(DateTime(d.year, d.month, d.day))) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Geselecteerde periode bevat reeds gereserveerde dagen.',
-            ),
-          ),
+          const SnackBar(content: Text('Geselecteerde periode bevat reeds gereserveerde dagen.')),
         );
         return;
       }
@@ -179,9 +170,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     });
 
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Reservering succesvol!')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Reservering succesvol!')),
+    );
 
     setState(() {
       _isSubmitting = false;
@@ -201,10 +192,20 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.name,
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-            ),
+            if (widget.photoUrl != null && widget.photoUrl!.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(widget.photoUrl!),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            Text(widget.name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(widget.description),
             const SizedBox(height: 8),
@@ -213,12 +214,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             const SizedBox(height: 12),
             if (widget.startDate != null && widget.endDate != null)
               Text(
-                'Beschikbaar van ${widget.startDate!.day}/${widget.startDate!.month} tot '
-                '${widget.endDate!.day}/${widget.endDate!.month}',
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
+                'Beschikbaar van ${widget.startDate!.day}/${widget.startDate!.month} '
+                'tot ${widget.endDate!.day}/${widget.endDate!.month}',
+                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
               ),
             const SizedBox(height: 20),
             if (_userReservationStart != null && _userReservationEnd != null)
@@ -228,10 +226,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                   '⚠️ Je hebt dit toestel reeds gereserveerd van '
                   '${_userReservationStart!.day}/${_userReservationStart!.month} '
                   'tot ${_userReservationEnd!.day}/${_userReservationEnd!.month}',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                 ),
               ),
             TableCalendar(
@@ -266,7 +261,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
             if (_rangeStart != null)
               Text(
@@ -276,10 +270,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isSubmitting ? null : _reserveDevice,
-              child:
-                  _isSubmitting
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Reserveer'),
+              child: _isSubmitting
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Reserveer'),
             ),
           ],
         ),

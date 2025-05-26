@@ -15,6 +15,7 @@ class DeviceService {
     required DateTime startDate,
     required DateTime endDate,
     String? renterName,
+    String? photoUrl,
   }) async {
     await FirebaseFirestore.instance.collection('devices').add({
       'name': name,
@@ -26,6 +27,7 @@ class DeviceService {
       'startDate': startDate,
       'endDate': endDate,
       'renterName': renterName,
+      'photoUrl': photoUrl,
       'createdAt': Timestamp.now(),
       'ownerId': FirebaseAuth.instance.currentUser!.uid,
     });

@@ -292,6 +292,7 @@ class _DeviceListScreenState extends State<DeviceListScreen> {
                                         category: category,
                                         startDate: startDate,
                                         endDate: endDate,
+                                        photoUrl: data?['photoUrl']
                                       ),
                                 ),
                               );
